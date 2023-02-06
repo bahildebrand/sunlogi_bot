@@ -1,10 +1,11 @@
 import discord
 from discord import app_commands
 import os
+
 from sunbot.delivery import add_commands
+from sunbot.stockpiles import add_stockpile_commands
 
-
-MY_GUILD = discord.Object(id=610626278214860800)  # replace with your guild id
+MY_GUILD = discord.Object(id=610626278214860800)
 
 
 class MyClient(discord.Client):
@@ -21,13 +22,15 @@ class MyClient(discord.Client):
     async def setup_hook(self):
         # This copies the global commands over to your guild.
         self.tree.copy_global_to(guild=MY_GUILD)
-        await self.tree.sync()
+        await self.tree.sync(guild=MY_GUILD)
 
 
 def main():
     client = MyClient()
 
     add_commands(client)
+    add_stockpile_commands(client)
 
     discord_token = os.environ.get("DISCORD_TOKEN")
+    print(discord_token)
     client.run(discord_token)
