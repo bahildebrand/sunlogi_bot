@@ -54,7 +54,7 @@ def getLabeledDepots():
         dynamicLabels = getDynamicLabels(map)
         staticLabels = getStaticLabels(map)
 
-        map.replace('Hex', '')
+        map = map.replace('Hex', '')
         depotNames = []
         for dynItem in dynamicLabels['mapItems']:
             if dynItem['iconType'] in ICON_MAP:

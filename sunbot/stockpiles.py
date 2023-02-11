@@ -3,25 +3,67 @@ import json
 from discord import app_commands
 from typing import List
 from sunbot.database import SunDB
+from collections import defaultdict
+import yaml
+from yaml.representer import Representer
 
 db = SunDB()
+
+
+class Depots:
+    def __init__(self):
+        depot_file = open("depots.json", "r")
+        self.depots_full = json.load(depot_file)
+
+        depot_lists = list(self.depots_full.values())
+        self.depot_list = [
+            depot for depot_list in depot_lists for depot in depot_list]
+
+        self.depot_map = {}
+        for region, depot_list in self.depots_full.items():
+            for depot in depot_list:
+                self.depot_map[depot] = region
+
+    def depotList(self):
+        return self.depot_list
+
+    def depotMap(self):
+        return self.depot_map
+
+
+depots = Depots()
+
+
+# Stupid work around for yaml indenting
+class YamlDumper(yaml.Dumper):
+    def increase_indent(self, flow=False, *args, **kwargs):
+        return super().increase_indent(flow=flow, indentless=False)
 
 
 async def depot_autocomplete(
     interaction: discord.Interaction,
     current: str
 ) -> List[app_commands.Choice[str]]:
-    depot_file = open("depots.json", "r")
-    depots = json.load(depot_file)
-    depots = list(depots.values())
-    depots = [depot for depotList in depots for depot in depotList]
-
     depots_filtered = list(
-        filter(lambda depot: current.lower() in depot.lower(), depots))
+        filter(lambda depot: current.lower() in depot.lower(), depots.depotList()))
     return [
         app_commands.Choice(name=depot, value=depot)
         for depot in depots_filtered[:25]
     ]
+
+
+def format_stockpiles(stockpiles):
+    stockpile_dict = defaultdict(lambda: defaultdict(list))
+    depot_map = depots.depotMap()
+    for stockpile in stockpiles:
+        region = depot_map[stockpile[1]]
+        stockpile_dict[region][stockpile[1]].append(
+            {stockpile[0]: stockpile[2]})
+
+    yaml.add_representer(defaultdict, Representer.represent_dict)
+    yaml_dump = yaml.dump(
+        stockpile_dict, Dumper=YamlDumper)
+    return '```\n' + yaml_dump + '```'
 
 
 async def update_listing_message(client, channel_id):
@@ -29,14 +71,13 @@ async def update_listing_message(client, channel_id):
     print(msg_id)
     channel = client.get_channel(channel_id)
     stockpiles = db.getAllStockpiles()
+    formatted_stockpiles = format_stockpiles(stockpiles)
     if msg_id is None:
-        print("Message not found")
-        msg = await channel.send(content=stockpiles)
+        msg = await channel.send(content=formatted_stockpiles)
         db.setMessageId(channel_id, msg.id)
     else:
-        print("Message found")
         msg = await channel.fetch_message(msg_id[0])
-        await msg.edit(content=stockpiles)
+        await msg.edit(content=formatted_stockpiles)
 
 
 @app_commands.command(description='Adds a stockpile')
@@ -55,7 +96,7 @@ async def liststockpiles(interaction: discord.Interaction):
 
 
 async def stockpile_autocomplete(
-    interaction: discord.Interaction,
+    _interaction: discord.Interaction,
     current: str
 ) -> List[app_commands.Choice[str]]:
     stockpiles = db.getAllStockpiles()
@@ -81,7 +122,6 @@ async def deletestockpile(interaction: discord.Interaction, name: str):
     await interaction.response.send_message(content=f'Deleted stockpile: {name}', ephemeral=True)
 
     await update_listing_message(interaction.client, interaction.channel_id)
-
 
 
 def add_stockpile_commands(client):
