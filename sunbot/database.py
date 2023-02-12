@@ -1,113 +1,79 @@
-import psycopg2
 from psycopg2.pool import ThreadedConnectionPool
+from sqlalchemy import URL
+from sqlalchemy import create_engine
+from sunbot.models import Base
+from sunbot.models import Stockpiles
+from sunbot.models import MsgIds
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy import delete
 
 
 class SunDB:
     def __init__(self):
-        self.connPool = ThreadedConnectionPool(5, 20, dbname="postgres",  user="postgres",
-                                               host="127.0.0.1", password="password")
-        conn = self.connPool.getconn()
-        cur = conn.cursor()
-        # Create stockpile table
-        cur.execute(
-            "CREATE TABLE IF NOT EXISTS stockpiles( stockpile_name TEXT PRIMARY KEY, depot TEXT, code INTEGER )")
-        # Create message id table
-        cur.execute(
-            "CREATE TABLE IF NOT EXISTS stockpile_msgs( channel_id TEXT PRIMARY KEY, message_id TEXT )")
-        conn.commit()
-        cur.close()
-        self.connPool.putconn(conn)
+        url_object = URL.create(
+            "postgresql+psycopg2",
+            username="postgres",
+            password="password",
+            host="localhost",
+            database="postgres",
+        )
+
+        self.engine = create_engine(url_object, echo=True)
+        Base.metadata.create_all(self.engine)
 
     def addStockPile(self, name: str, depot: str, code: int):
-        query_string = "INSERT INTO stockpiles(stockpile_name, depot, code) VALUES(%s, %s, %s)"
+        with Session(self.engine) as session:
+            new_stockpile = Stockpiles(
+                stockpile_name=name,
+                depot=depot,
+                code=code,
+            )
 
-        conn = self.connPool.getconn()
-        cur = conn.cursor()
-
-        values = (name, depot, code)
-        cur.execute(query_string, values)
-        conn.commit()
-
-        cur.close()
-        self.connPool.putconn(conn)
+            session.add(new_stockpile)
+            session.commit()
 
     def getStockPile(self, name: str):
-        query_string = f"SELECT (stockpile_name, depot, code) FROM stockpiles WHERE stockpile_name = '{name}'"
+        with Session(self.engine) as session:
+            statement = select(Stockpiles).where(
+                Stockpiles.stockpile_name == name)
 
-        conn = self.connPool.getconn()
-        cur = conn.cursor()
-        cur.execute(query_string)
+            result = session.execute(statement)
 
-        val = cur.fetchone()
-        conn.commit()
-
-        cur.close()
-        self.connPool.putconn(conn)
+            return result.fetchone()
 
     def deleteStockpile(self, name: str):
-        query_string = f"DELETE FROM stockpiles WHERE stockpile_name = %s;"
-
-        conn = self.connPool.getconn()
-        cur = conn.cursor()
-        values = (name,)
-        cur.execute(query_string, values)
-        rows_deleted = cur.rowcount
-        print(f"rows deleted: {rows_deleted}")
-        conn.commit()
-
-        cur.close()
-        self.connPool.putconn(conn)
+        with Session(self.engine) as session:
+            stmt = delete(Stockpiles).where(Stockpiles.stockpile_name == name)
+            session.execute(stmt)
+            session.commit()
 
     def clearStockpiles(self):
-        query_string = "DELETE FROM stockpiles"
-
-        conn = self.connPool.getconn()
-        cur = conn.cursor()
-
-        cur.execute(query_string)
-        cur.execute(query_string)
-        conn.commit()
-
-        cur.close()
-        self.connPool.putconn(conn)
+        with Session(self.engine) as session:
+            stmt = delete(Stockpiles)
+            session.execute(stmt)
+            session.commit()
 
     def getAllStockpiles(self):
-        query_string = "SELECT * FROM stockpiles"
+        with Session(self.engine) as session:
+            statement = select(Stockpiles)
 
-        conn = self.connPool.getconn()
-        cur = conn.cursor()
-        cur.execute(query_string)
-
-        stockpiles = cur.fetchall()
-
-        cur.close()
-        self.connPool.putconn(conn)
-
-        return stockpiles
+            result = session.execute(statement)
+            return result.all()
 
     def getMessageId(self, channel_id):
-        query_string = f"SELECT message_id FROM stockpile_msgs WHERE channel_id = '{channel_id}'"
-
-        conn = self.connPool.getconn()
-        cur = conn.cursor()
-        cur.execute(query_string)
-        val = cur.fetchone()
-        conn.commit()
-
-        cur.close
-        self.connPool.putconn(conn)
-
-        return val
+        with Session(self.engine) as session:
+            statement = select(MsgIds).where(
+                MsgIds.channel_id == str(channel_id))
+            result = session.execute(statement)
+            return result.one_or_none()
 
     def setMessageId(self, channel_id, message_id):
-        query_string = "INSERT INTO stockpile_msgs(channel_id, message_id) VALUES(%s, %s)"
+        with Session(self.engine) as session:
+            new_msg = MsgIds(
+                channel_id=channel_id,
+                message_id=message_id
+            )
 
-        conn = self.connPool.getconn()
-        cur = conn.cursor()
-
-        values = (channel_id, message_id)
-        cur.execute(query_string, values)
-        conn.commit()
-
-        cur.close()
-        self.connPool.putconn(conn)
+            session.add(new_msg)
+            session.commit()

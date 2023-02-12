@@ -56,9 +56,10 @@ def format_stockpiles(stockpiles):
     stockpile_dict = defaultdict(lambda: defaultdict(list))
     depot_map = depots.depotMap()
     for stockpile in stockpiles:
-        region = depot_map[stockpile[1]]
-        stockpile_dict[region][stockpile[1]].append(
-            {stockpile[0]: stockpile[2]})
+        stockpile = stockpile[0]
+        region = depot_map[stockpile.depot]
+        stockpile_dict[region][stockpile.depot].append(
+            {stockpile.stockpile_name: stockpile.code})
 
     yaml.add_representer(defaultdict, Representer.represent_dict)
     yaml_dump = yaml.dump(
@@ -76,7 +77,7 @@ async def update_listing_message(client, channel_id):
         msg = await channel.send(content=formatted_stockpiles)
         db.setMessageId(channel_id, msg.id)
     else:
-        msg = await channel.fetch_message(msg_id[0])
+        msg = await channel.fetch_message(msg_id[0].message_id)
         await msg.edit(content=formatted_stockpiles)
 
 
@@ -92,7 +93,7 @@ async def addstockpile(interaction: discord.Interaction, depot: str, name: str, 
 @app_commands.command(description='Lists all stockpiles')
 async def liststockpiles(interaction: discord.Interaction):
     stockpiles = db.getAllStockpiles()
-    await interaction.response.send_message(content=f'{stockpiles}', ephemeral=True)
+    await interaction.response.send_message(content=f'{repr(stockpiles)}', ephemeral=True)
 
 
 async def stockpile_autocomplete(
@@ -100,9 +101,10 @@ async def stockpile_autocomplete(
     current: str
 ) -> List[app_commands.Choice[str]]:
     stockpiles = db.getAllStockpiles()
+    print(stockpiles)
 
     stockpiles_filtered = list(
-        map(lambda stockpile: stockpile[0], stockpiles))
+        map(lambda stockpile: stockpile[0].stockpile_name, stockpiles))
 
     stockpiles_filtered = list(
         filter(lambda stockpile: current.lower()
