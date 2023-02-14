@@ -24,11 +24,16 @@ class Depots:
             for depot in depot_list:
                 self.depot_map[depot] = region
 
+        self.depot_set = set(self.depot_list)
+
     def depotList(self):
         return self.depot_list
 
     def depotMap(self):
         return self.depot_map
+
+    def checkDepot(self, depot: str) -> bool:
+        return depot in self.depot_set
 
 
 depots = Depots()
@@ -41,7 +46,7 @@ class YamlDumper(yaml.Dumper):
 
 
 async def depot_autocomplete(
-    interaction: discord.Interaction,
+    _: discord.Interaction,
     current: str
 ) -> List[app_commands.Choice[str]]:
     depots_filtered = list(
@@ -84,10 +89,13 @@ async def update_listing_message(client, channel_id):
 @app_commands.command(description='Adds a stockpile')
 @app_commands.autocomplete(depot=depot_autocomplete)
 async def addstockpile(interaction: discord.Interaction, depot: str, name: str, code: int):
-    db.addStockPile(name, depot, code)
+    if depots.checkDepot(depot):
+        db.addStockPile(name, depot, code)
 
-    await interaction.response.send_message(content=f'depot: {depot} - name: {name} code: {code}', ephemeral=True)
-    await update_listing_message(interaction.client, interaction.channel_id)
+        await update_listing_message(interaction.client, interaction.channel_id)
+        await interaction.response.send_message(content=f'depot: {depot} - name: {name} code: {code}', ephemeral=True)
+    else:
+        await interaction.response.send_message(content=f'Invalid depot: {depot}', ephemeral=True)
 
 
 @app_commands.command(description='Lists all stockpiles')
