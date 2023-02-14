@@ -22,9 +22,10 @@ class SunDB:
         self.engine = create_engine(url_object, echo=True)
         Base.metadata.create_all(self.engine)
 
-    def addStockPile(self, name: str, depot: str, code: int):
+    def addStockPile(self, channel_id: str, name: str, depot: str, code: int):
         with Session(self.engine) as session:
             new_stockpile = Stockpiles(
+                channel_id=channel_id,
                 stockpile_name=name,
                 depot=depot,
                 code=code,
@@ -42,9 +43,10 @@ class SunDB:
 
             return result.fetchone()
 
-    def deleteStockpile(self, name: str):
+    def deleteStockpile(self, name: str, channel_id: str):
         with Session(self.engine) as session:
-            stmt = delete(Stockpiles).where(Stockpiles.stockpile_name == name)
+            stmt = delete(Stockpiles).where(Stockpiles.stockpile_name == name).where(
+                Stockpiles.channel_id == str(channel_id))
             session.execute(stmt)
             session.commit()
 
@@ -54,9 +56,10 @@ class SunDB:
             session.execute(stmt)
             session.commit()
 
-    def getAllStockpiles(self):
+    def getAllStockpiles(self, channel_id: str):
         with Session(self.engine) as session:
-            statement = select(Stockpiles)
+            statement = select(Stockpiles).where(
+                Stockpiles.channel_id == str(channel_id))
 
             result = session.execute(statement)
             return result.all()

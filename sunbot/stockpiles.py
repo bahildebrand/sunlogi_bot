@@ -76,7 +76,7 @@ async def update_listing_message(client, channel_id):
     msg_id = db.getMessageId(channel_id)
     print(msg_id)
     channel = client.get_channel(channel_id)
-    stockpiles = db.getAllStockpiles()
+    stockpiles = db.getAllStockpiles(channel_id)
     formatted_stockpiles = format_stockpiles(stockpiles)
     if msg_id is None:
         msg = await channel.send(content=formatted_stockpiles)
@@ -90,7 +90,7 @@ async def update_listing_message(client, channel_id):
 @app_commands.autocomplete(depot=depot_autocomplete)
 async def addstockpile(interaction: discord.Interaction, depot: str, name: str, code: int):
     if depots.checkDepot(depot):
-        db.addStockPile(name, depot, code)
+        db.addStockPile(interaction.channel_id, name, depot, code)
 
         await update_listing_message(interaction.client, interaction.channel_id)
         await interaction.response.send_message(content=f'depot: {depot} - name: {name} code: {code}', ephemeral=True)
@@ -100,15 +100,15 @@ async def addstockpile(interaction: discord.Interaction, depot: str, name: str, 
 
 @app_commands.command(description='Lists all stockpiles')
 async def liststockpiles(interaction: discord.Interaction):
-    stockpiles = db.getAllStockpiles()
+    stockpiles = db.getAllStockpiles(interaction.channel_id)
     await interaction.response.send_message(content=f'{repr(stockpiles)}', ephemeral=True)
 
 
 async def stockpile_autocomplete(
-    _interaction: discord.Interaction,
+    interaction: discord.Interaction,
     current: str
 ) -> List[app_commands.Choice[str]]:
-    stockpiles = db.getAllStockpiles()
+    stockpiles = db.getAllStockpiles(interaction.channel_id)
     print(stockpiles)
 
     stockpiles_filtered = list(
@@ -127,10 +127,9 @@ async def stockpile_autocomplete(
 @app_commands.command(description='Delete a stockpile')
 @app_commands.autocomplete(name=stockpile_autocomplete)
 async def deletestockpile(interaction: discord.Interaction, name: str):
-    db.deleteStockpile(name)
+    db.deleteStockpile(name, interaction.channel_id)
 
     await interaction.response.send_message(content=f'Deleted stockpile: {name}', ephemeral=True)
-
     await update_listing_message(interaction.client, interaction.channel_id)
 
 

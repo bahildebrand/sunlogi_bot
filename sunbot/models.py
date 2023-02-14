@@ -10,6 +10,7 @@ class Base(DeclarativeBase):
 class Stockpiles(Base):
     __tablename__ = "stockpiles"
 
+    channel_id: Mapped[str] = mapped_column(primary_key=True)
     stockpile_name: Mapped[str] = mapped_column(primary_key=True)
     depot: Mapped[str]
     code: Mapped[int]
