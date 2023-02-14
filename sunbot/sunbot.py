@@ -5,8 +5,6 @@ import os
 from sunbot.delivery import add_commands
 from sunbot.stockpiles import add_stockpile_commands
 
-MY_GUILD = discord.Object(id=610626278214860800)
-
 
 class MyClient(discord.Client):
     def __init__(self):
@@ -20,9 +18,14 @@ class MyClient(discord.Client):
         print(f'Message from {message.author}: {message.content}')
 
     async def setup_hook(self):
-        # This copies the global commands over to your guild.
-        self.tree.copy_global_to(guild=MY_GUILD)
-        await self.tree.sync(guild=MY_GUILD)
+        # Copies global commands to guild, only needed in test environments
+        guild_id = os.environ.get("TEST_GUILD")
+        if guild_id is not None:
+            print(f"Guild: {guild_id}")
+            guild_id = discord.Object(id=guild_id)
+
+            self.tree.copy_global_to(guild=guild_id)
+            await self.tree.sync(guild=guild_id)
 
 
 def main():
