@@ -1,0 +1,27 @@
+version: '3'
+services:
+  bot:
+    build: .
+    depends_on:
+      database:
+        condition: service_healthy
+    links:
+      - database
+    env_file:
+      - testing.env
+    environment:
+      - "TEST_GUILD=${TEST_GUILD}"
+      - "DISCORD_TOKEN=${DISCORD_TOKEN}"
+
+  database:
+    image: postgres
+    user: postgres
+    ports:
+      - 5432:5432
+    environment:
+      - "POSTGRES_PASSWORD=password"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 2s
+      timeout: 2s
+      retries: 5

@@ -7,19 +7,23 @@ from sunbot.models import MsgIds
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy import delete
+import os
 
 
 class SunDB:
     def __init__(self):
+        host = os.environ.get("DB_HOST")
+        password = os.environ.get("DB_PASSWORD")
+
         url_object = URL.create(
             "postgresql+psycopg2",
             username="postgres",
-            password="password",
-            host="localhost",
+            password=password,
+            host=host,
             database="postgres",
         )
 
-        self.engine = create_engine(url_object, echo=True)
+        self.engine = create_engine(url_object)
         Base.metadata.create_all(self.engine)
 
     def addStockPile(self, channel_id: str, name: str, depot: str, code: int):
