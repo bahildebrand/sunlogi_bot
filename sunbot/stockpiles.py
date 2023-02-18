@@ -7,6 +7,7 @@ from collections import defaultdict
 import yaml
 from yaml.representer import Representer
 
+
 db = SunDB()
 
 
@@ -72,7 +73,7 @@ def format_stockpiles(stockpiles):
     return '```\n' + yaml_dump + '```'
 
 
-async def update_listing_message(client, channel_id):
+async def update_listing_message(client: discord.Client, channel_id: int):
     msg_id = db.getMessageId(channel_id)
     print(msg_id)
     channel = client.get_channel(channel_id)
@@ -84,6 +85,13 @@ async def update_listing_message(client, channel_id):
     else:
         msg = await channel.fetch_message(msg_id[0].message_id)
         await msg.edit(content=formatted_stockpiles)
+
+
+async def clear_listing_messages(client):
+    msg_ids = db.getAllMessageIds()
+    for id in msg_ids:
+        print(id.channel_id)
+        await update_listing_message(client, int(id.channel_id))
 
 
 @app_commands.command(description='Adds a stockpile')
@@ -109,7 +117,6 @@ async def stockpile_autocomplete(
     current: str
 ) -> List[app_commands.Choice[str]]:
     stockpiles = db.getAllStockpiles(interaction.channel_id)
-    print(stockpiles)
 
     stockpiles_filtered = list(
         map(lambda stockpile: stockpile[0].stockpile_name, stockpiles))
@@ -133,7 +140,16 @@ async def deletestockpile(interaction: discord.Interaction, name: str):
     await update_listing_message(interaction.client, interaction.channel_id)
 
 
+@app_commands.command(description='Delete all stockpiles')
+async def clearstockpiles(interaction: discord.Interaction):
+    db.clearStockpiles()
+
+    await clear_listing_messages(interaction.client)
+    await interaction.response.send_message(content='Deleted all stockpiles', ephemeral=True)
+
+
 def add_stockpile_commands(client):
     client.tree.add_command(addstockpile)
     client.tree.add_command(liststockpiles)
     client.tree.add_command(deletestockpile)
+    client.tree.add_command(clearstockpiles)

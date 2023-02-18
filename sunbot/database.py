@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy import delete
 import os
+from typing import List
 
 
 class SunDB:
@@ -67,6 +68,13 @@ class SunDB:
 
             result = session.execute(statement)
             return result.all()
+
+    def getAllMessageIds(self) -> List[MsgIds]:
+        with Session(self.engine) as session:
+            statement = select(MsgIds)
+
+            result = session.execute(statement)
+            return [tuple[0] for tuple in result.all()]
 
     def getMessageId(self, channel_id):
         with Session(self.engine) as session:
