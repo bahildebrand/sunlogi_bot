@@ -24,3 +24,6 @@ class MsgIds(Base):
 
     channel_id: Mapped[str] = mapped_column(primary_key=True)
     message_id: Mapped[str]
+
+    def __repr__(self) -> str:
+        return f"MsgIds(channel_id={self.channel_id}, message_id={self.message_id})"

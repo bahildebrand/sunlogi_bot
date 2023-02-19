@@ -6,7 +6,7 @@ from sunbot.database import SunDB
 from collections import defaultdict
 import yaml
 from yaml.representer import Representer
-
+import logging
 
 db = SunDB()
 
@@ -75,7 +75,8 @@ def format_stockpiles(stockpiles):
 
 async def update_listing_message(client: discord.Client, channel_id: int):
     msg_id = db.getMessageId(channel_id)
-    print(msg_id)
+    logging.debug(
+        f'Channel ID: {channel_id}, Message ID: {msg_id[0].message_id}')
     channel = client.get_channel(channel_id)
     stockpiles = db.getAllStockpiles(channel_id)
     formatted_stockpiles = format_stockpiles(stockpiles)
@@ -89,9 +90,10 @@ async def update_listing_message(client: discord.Client, channel_id: int):
 
 async def clear_listing_messages(client):
     msg_ids = db.getAllMessageIds()
+    logging.debug(msg_ids)
     for id in msg_ids:
-        print(id.channel_id)
-        await update_listing_message(client, int(id.channel_id))
+        logging.debug(f'Channel ID {id.channel_id}')
+        await update_listing_message(client, id.channel_id)
 
 
 @app_commands.command(description='Adds a stockpile')
@@ -144,7 +146,7 @@ async def deletestockpile(interaction: discord.Interaction, name: str):
 async def clearstockpiles(interaction: discord.Interaction):
     db.clearStockpiles()
 
-    await clear_listing_messages(interaction.client)
+    await update_listing_message(interaction.client, interaction.channel_id)
     await interaction.response.send_message(content='Deleted all stockpiles', ephemeral=True)
 
 

@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy import delete
 import os
 from typing import List
+import logging
 
 
 class SunDB:
@@ -81,7 +82,10 @@ class SunDB:
             statement = select(MsgIds).where(
                 MsgIds.channel_id == str(channel_id))
             result = session.execute(statement)
-            return result.one_or_none()
+
+            output = result.one_or_none()
+            logging.debug(output)
+            return output
 
     def setMessageId(self, channel_id, message_id):
         with Session(self.engine) as session:
