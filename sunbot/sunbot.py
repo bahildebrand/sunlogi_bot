@@ -1,6 +1,7 @@
 import discord
 from discord import app_commands
 import os
+import logging
 
 from sunbot.delivery import add_commands
 from sunbot.stockpiles import add_stockpile_commands
@@ -12,7 +13,7 @@ class MyClient(discord.Client):
         self.tree = app_commands.CommandTree(self)
 
     async def on_ready(self):
-        print(f'Logged on as {self.user}!')
+        logging.info("Discord client connected.")
 
     async def on_message(self, message):
         print(f'Message from {message.author}: {message.content}')
@@ -21,7 +22,6 @@ class MyClient(discord.Client):
         # Copies global commands to guild, only needed in test environments
         guild_id = os.environ.get("TEST_GUILD")
         if guild_id is not None:
-            print(f"Guild: {guild_id}")
             guild_id = discord.Object(id=guild_id)
 
             self.tree.copy_global_to(guild=guild_id)
@@ -29,6 +29,9 @@ class MyClient(discord.Client):
 
 
 def main():
+    format_str = '[%(asctime)s] [%(filename)s:%(lineno)d] [%(levelname)s]: %(message)s'
+    logging.basicConfig(
+        level="INFO", format=format_str, datefmt='%Y-%m-%d:%H:%M:%S')
     client = MyClient()
 
     add_commands(client)
@@ -36,4 +39,4 @@ def main():
 
     discord_token = os.environ.get("DISCORD_TOKEN")
     print(discord_token)
-    client.run(discord_token)
+    client.run(discord_token, log_handler=None)
