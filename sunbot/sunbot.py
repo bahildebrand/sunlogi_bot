@@ -26,6 +26,8 @@ class MyClient(discord.Client):
 
             self.tree.copy_global_to(guild=guild_id)
             await self.tree.sync(guild=guild_id)
+        else:
+            await self.tree.sync()
 
 
 def main():
