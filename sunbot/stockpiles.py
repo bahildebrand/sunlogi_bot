@@ -103,15 +103,9 @@ async def addstockpile(interaction: discord.Interaction, depot: str, name: str, 
         db.addStockPile(interaction.channel_id, name, depot, code)
 
         await update_listing_message(interaction.client, interaction.channel_id)
-        await interaction.response.send_message(content=f'depot: {depot} - name: {name} code: {code}', ephemeral=True)
+        await interaction.response.send_message(content=f'Created depot: {depot}', ephemeral=True)
     else:
-        await interaction.response.send_message(content=f'Invalid depot: {depot}', ephemeral=True)
-
-
-@app_commands.command(description='Lists all stockpiles')
-async def liststockpiles(interaction: discord.Interaction):
-    stockpiles = db.getAllStockpiles(interaction.channel_id)
-    await interaction.response.send_message(content=f'{repr(stockpiles)}', ephemeral=True)
+        await interaction.response.send_message(content=f'Invalid depot: {depot}. Please select one from the list', ephemeral=True)
 
 
 async def stockpile_autocomplete(
@@ -136,13 +130,16 @@ async def stockpile_autocomplete(
 @app_commands.command(description='Delete a stockpile')
 @app_commands.autocomplete(name=stockpile_autocomplete)
 async def deletestockpile(interaction: discord.Interaction, name: str):
-    db.deleteStockpile(name, interaction.channel_id)
+    stockpile_deleted = db.deleteStockpile(name, interaction.channel_id)
 
-    await interaction.response.send_message(content=f'Deleted stockpile: {name}', ephemeral=True)
-    await update_listing_message(interaction.client, interaction.channel_id)
+    if stockpile_deleted:
+        await interaction.response.send_message(content=f'Deleted stockpile: {name}', ephemeral=True)
+        await update_listing_message(interaction.client, interaction.channel_id)
+    else:
+        await interaction.response.send_message(content=f'Stockpile {name} not found. Please use a stockpile from the suggested list', ephemeral=True)
 
 
-@app_commands.command(description='Delete all stockpiles')
+@app_commands.command(description='Delete all stockpiles associated with this channel.')
 async def clearstockpiles(interaction: discord.Interaction):
     db.clearStockpiles()
 
@@ -152,6 +149,5 @@ async def clearstockpiles(interaction: discord.Interaction):
 
 def add_stockpile_commands(client):
     client.tree.add_command(addstockpile)
-    client.tree.add_command(liststockpiles)
     client.tree.add_command(deletestockpile)
     client.tree.add_command(clearstockpiles)

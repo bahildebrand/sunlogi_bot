@@ -49,12 +49,18 @@ class SunDB:
 
             return result.fetchone()
 
-    def deleteStockpile(self, name: str, channel_id: str):
+    def deleteStockpile(self, name: str, channel_id: str) -> bool:
         with Session(self.engine) as session:
             stmt = delete(Stockpiles).where(Stockpiles.stockpile_name == name).where(
                 Stockpiles.channel_id == str(channel_id))
-            session.execute(stmt)
+            result = session.execute(stmt)
+
+            if result.rowcount == 0:
+                return False
+
             session.commit()
+
+        return True
 
     def clearStockpiles(self):
         with Session(self.engine) as session:
