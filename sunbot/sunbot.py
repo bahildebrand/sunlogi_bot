@@ -15,9 +15,6 @@ class MyClient(discord.Client):
     async def on_ready(self):
         logging.info("Discord client connected.")
 
-    async def on_message(self, message):
-        print(f'Message from {message.author}: {message.content}')
-
     async def setup_hook(self):
         # Copies global commands to guild, only needed in test environments
         guild_id = os.environ.get("TEST_GUILD")
@@ -36,7 +33,7 @@ def main():
         level="INFO", format=format_str, datefmt='%Y-%m-%d:%H:%M:%S')
     client = MyClient()
 
-    add_commands(client)
+    # add_commands(client)
     add_stockpile_commands(client)
 
     discord_token = os.environ.get("DISCORD_TOKEN")

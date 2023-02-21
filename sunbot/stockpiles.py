@@ -136,7 +136,7 @@ async def deletestockpile(interaction: discord.Interaction, name: str):
         await interaction.response.send_message(content=f'Deleted stockpile: {name}', ephemeral=True)
         await update_listing_message(interaction.client, interaction.channel_id)
     else:
-        await interaction.response.send_message(content=f'Stockpile {name} not found. Please use a stockpile from the suggested list', ephemeral=True)
+        await interaction.response.send_message(content=f'Stockpile \"{name}\" not found. Please use a stockpile from the suggested list', ephemeral=True)
 
 
 @app_commands.command(description='Delete all stockpiles associated with this channel.')
