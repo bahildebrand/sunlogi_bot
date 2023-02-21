@@ -3,18 +3,24 @@ import json
 from discord import app_commands
 from typing import List
 from sunbot.database import SunDB
+from sunbot.war_api import getLabeledDepots
 from collections import defaultdict
 import yaml
 from yaml.representer import Representer
 import logging
+import os
 
 db = SunDB()
 
 
 class Depots:
     def __init__(self):
-        depot_file = open("depots.json", "r")
-        self.depots_full = json.load(depot_file)
+        load_depot_file = os.environ.get("DEPOT_TEST_FILE")
+        if load_depot_file is not None:
+            depot_file = open("depots.json", "r")
+            self.depots_full = json.load(depot_file)
+        else:
+            self.depots_full = getLabeledDepots()
 
         depot_lists = list(self.depots_full.values())
         self.depot_list = [

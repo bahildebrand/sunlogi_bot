@@ -12,6 +12,7 @@ services:
     environment:
       - "TEST_GUILD=${TEST_GUILD}"
       - "DISCORD_TOKEN=${DISCORD_TOKEN}"
+      - "DEPOT_TEST_FILE=y"
 
   database:
     image: postgres

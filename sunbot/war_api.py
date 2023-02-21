@@ -1,18 +1,20 @@
 import requests
 import json
 import math
+import re
 
 ROOT_URL = "https://war-service-live.foxholeservices.com/api"
 
 ICON_MAP = {
     33: "Storage Facility",
-    45: "Relic Base",
-    46: "Relic Base",
-    47: "Relic Base",
+    # TODO: Add these back in later with a better system to check
+    # 45: "Relic Base",
+    # 46: "Relic Base",
+    # 47: "Relic Base",
     52: "Seaport",
-    56: "Town Base",
-    57: "Town Base",
-    58: "Town Base",
+    # 56: "Town Base",
+    # 57: "Town Base",
+    # 58: "Town Base",
 }
 
 
@@ -55,6 +57,7 @@ def getLabeledDepots():
         staticLabels = getStaticLabels(map)
 
         map = map.replace('Hex', '')
+        map = re.sub(r"(\w)([A-Z])", r"\1 \2", map)
         depotNames = []
         for dynItem in dynamicLabels['mapItems']:
             if dynItem['iconType'] in ICON_MAP:
@@ -80,11 +83,8 @@ def getLabeledDepots():
 
         depots[map] = depotNames
 
-    obj = json.dumps(depots)
-
     with open("depots.json", "w") as file:
+        obj = json.dumps(depots)
         file.write(obj)
-    print(obj)
 
-
-getLabeledDepots()
+    return depots
