@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sunbot"
-version = "0.2.0"
+version = "0.2.1"
 description = ""
 authors = ["Blake Hildebrand"]
 readme = "README.md"

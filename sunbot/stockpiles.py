@@ -109,7 +109,7 @@ async def addstockpile(interaction: discord.Interaction, depot: str, name: str, 
         db.addStockPile(interaction.channel_id, name, depot, code)
 
         await update_listing_message(interaction.client, interaction.channel_id)
-        await interaction.response.send_message(content=f'Created depot: {depot}', ephemeral=True)
+        await interaction.response.send_message(content=f'Created depot: {name}', ephemeral=True)
     else:
         await interaction.response.send_message(content=f'Invalid depot: {depot}. Please select one from the list', ephemeral=True)
 
