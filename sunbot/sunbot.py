@@ -1,5 +1,6 @@
 import discord
 from discord import app_commands
+from sunbot.database import SunDB
 import os
 import logging
 
@@ -10,6 +11,7 @@ from sunbot.stockpiles import add_stockpile_commands
 class MyClient(discord.Client):
     def __init__(self):
         super().__init__(intents=discord.Intents.default())
+        self.db = SunDB()
         self.tree = app_commands.CommandTree(self)
 
     async def on_ready(self):
@@ -18,6 +20,7 @@ class MyClient(discord.Client):
     async def setup_hook(self):
         # Copies global commands to guild, only needed in test environments
         guild_id = os.environ.get("TEST_GUILD")
+        await self.db.init_models()
         if guild_id is not None:
             guild_id = discord.Object(id=guild_id)
 

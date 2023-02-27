@@ -1,10 +1,12 @@
+import asyncio
 from psycopg2.pool import ThreadedConnectionPool
 from sqlalchemy import URL
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine
 from sunbot.models import Base
 from sunbot.models import Stockpiles
 from sunbot.models import MsgIds
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy import select
 from sqlalchemy import delete
 import os
@@ -18,18 +20,24 @@ class SunDB:
         password = os.environ.get("DB_PASSWORD")
 
         url_object = URL.create(
-            "postgresql+psycopg2",
+            "postgresql+asyncpg",
             username="postgres",
             password=password,
             host=host,
             database="postgres",
         )
 
-        self.engine = create_engine(url_object)
-        Base.metadata.create_all(self.engine)
 
-    def addStockPile(self, channel_id: str, name: str, depot: str, code: int):
-        with Session(self.engine) as session:
+        self.engine = create_async_engine(url_object)
+        self.async_session = async_sessionmaker(self.engine)
+
+    async def init_models(self):
+        async with self.engine.begin() as conn:
+             await conn.run_sync(Base.metadata.create_all)
+        
+
+    async def addStockPile(self, channel_id: str, name: str, depot: str, code: int):
+        async with self.async_session() as session:
             new_stockpile = Stockpiles(
                 channel_id=channel_id,
                 stockpile_name=name,
@@ -38,22 +46,22 @@ class SunDB:
             )
 
             session.add(new_stockpile)
-            session.commit()
+            await session.commit()
 
-    def getStockPile(self, name: str):
-        with Session(self.engine) as session:
+    async def getStockPile(self, name: str):
+        async with self.async_session() as session:
             statement = select(Stockpiles).where(
                 Stockpiles.stockpile_name == name)
 
-            result = session.execute(statement)
+            result = await session.execute(statement)
 
             return result.fetchone()
 
-    def deleteStockpile(self, name: str, channel_id: str) -> bool:
-        with Session(self.engine) as session:
+    async def deleteStockpile(self, name: str, channel_id: str) -> bool:
+        async with self.async_session() as session:
             stmt = delete(Stockpiles).where(Stockpiles.stockpile_name == name).where(
                 Stockpiles.channel_id == str(channel_id))
-            result = session.execute(stmt)
+            result = await session.execute(stmt)
 
             if result.rowcount == 0:
                 return False
@@ -62,43 +70,43 @@ class SunDB:
 
         return True
 
-    def clearStockpiles(self):
-        with Session(self.engine) as session:
+    async def clearStockpiles(self):
+        async with self.async_session() as session:
             stmt = delete(Stockpiles)
-            session.execute(stmt)
-            session.commit()
+            await session.execute(stmt)
+            await session.commit()
 
-    def getAllStockpiles(self, channel_id: str):
-        with Session(self.engine) as session:
+    async def getAllStockpiles(self, channel_id: str):
+        async with self.async_session() as session:
             statement = select(Stockpiles).where(
                 Stockpiles.channel_id == str(channel_id))
 
-            result = session.execute(statement)
+            result = await session.execute(statement)
             return result.all()
 
-    def getAllMessageIds(self) -> List[MsgIds]:
-        with Session(self.engine) as session:
+    async def getAllMessageIds(self) -> List[MsgIds]:
+        async with self.async_session() as session:
             statement = select(MsgIds)
 
-            result = session.execute(statement)
+            result = await session.execute(statement)
             return [tuple[0] for tuple in result.all()]
 
-    def getMessageId(self, channel_id):
-        with Session(self.engine) as session:
+    async def getMessageId(self, channel_id):
+        async with self.async_session() as session:
             statement = select(MsgIds).where(
                 MsgIds.channel_id == str(channel_id))
-            result = session.execute(statement)
+            result = await session.execute(statement)
 
             output = result.one_or_none()
             logging.debug(output)
             return output
 
-    def setMessageId(self, channel_id, message_id):
-        with Session(self.engine) as session:
+    async def setMessageId(self, channel_id: str, message_id):
+        async with self.async_session() as session:
             new_msg = MsgIds(
                 channel_id=channel_id,
                 message_id=message_id
             )
 
             session.add(new_msg)
-            session.commit()
+            await session.commit()

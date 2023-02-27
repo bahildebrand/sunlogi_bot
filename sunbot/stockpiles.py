@@ -10,9 +10,6 @@ from yaml.representer import Representer
 import logging
 import os
 
-db = SunDB()
-
-
 class Depots:
     def __init__(self):
         load_depot_file = os.environ.get("DEPOT_TEST_FILE")
@@ -79,21 +76,23 @@ def format_stockpiles(stockpiles):
     return '```\n' + yaml_dump + '```'
 
 
-async def update_listing_message(client: discord.Client, channel_id: int):
-    msg_id = db.getMessageId(channel_id)
-    channel = client.get_channel(channel_id)
-    stockpiles = db.getAllStockpiles(channel_id)
+async def update_listing_message(client: discord.Client, channel_id: str):
+    db = client.db
+    msg_id = await db.getMessageId(channel_id)
+    channel = client.get_channel(int(channel_id))
+    stockpiles = await db.getAllStockpiles(channel_id)
     formatted_stockpiles = format_stockpiles(stockpiles)
     if msg_id is None:
         msg = await channel.send(content=formatted_stockpiles)
-        db.setMessageId(channel_id, msg.id)
+        await db.setMessageId(channel_id, msg.id)
     else:
         msg = await channel.fetch_message(msg_id[0].message_id)
         await msg.edit(content=formatted_stockpiles)
 
 
 async def clear_listing_messages(client):
-    msg_ids = db.getAllMessageIds()
+    db = client.db
+    msg_ids = await db.getAllMessageIds()
     logging.debug(msg_ids)
     for id in msg_ids:
         logging.debug(f'Channel ID {id.channel_id}')
@@ -104,7 +103,8 @@ async def clear_listing_messages(client):
 @app_commands.autocomplete(depot=depot_autocomplete)
 async def addstockpile(interaction: discord.Interaction, depot: str, name: str, code: int):
     if depots.checkDepot(depot):
-        db.addStockPile(interaction.channel_id, name, depot, code)
+        db = interaction.client.db
+        await db.addStockPile(str(interaction.channel_id), name, depot, code)
 
         await update_listing_message(interaction.client, interaction.channel_id)
         await interaction.response.send_message(content=f'Created depot: {name}', ephemeral=True)
@@ -116,7 +116,8 @@ async def stockpile_autocomplete(
     interaction: discord.Interaction,
     current: str
 ) -> List[app_commands.Choice[str]]:
-    stockpiles = db.getAllStockpiles(interaction.channel_id)
+    db = interaction.client.db
+    stockpiles = await db.getAllStockpiles(interaction.channel_id)
 
     stockpiles_filtered = list(
         map(lambda stockpile: stockpile[0].stockpile_name, stockpiles))
@@ -134,7 +135,8 @@ async def stockpile_autocomplete(
 @app_commands.command(description='Delete a stockpile')
 @app_commands.autocomplete(name=stockpile_autocomplete)
 async def deletestockpile(interaction: discord.Interaction, name: str):
-    stockpile_deleted = db.deleteStockpile(name, interaction.channel_id)
+    db = interaction.client.db
+    stockpile_deleted = await db.deleteStockpile(name, interaction.channel_id)
 
     if stockpile_deleted:
         await interaction.response.send_message(content=f'Deleted stockpile: {name}', ephemeral=True)
@@ -145,7 +147,8 @@ async def deletestockpile(interaction: discord.Interaction, name: str):
 
 @app_commands.command(description='Delete all stockpiles associated with this channel.')
 async def clearstockpiles(interaction: discord.Interaction):
-    db.clearStockpiles()
+    db = interaction.client.db
+    await db.clearStockpiles()
 
     await update_listing_message(interaction.client, interaction.channel_id)
     await interaction.response.send_message(content='Deleted all stockpiles', ephemeral=True)
