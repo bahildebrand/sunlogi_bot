@@ -81,8 +81,6 @@ def format_stockpiles(stockpiles):
 
 async def update_listing_message(client: discord.Client, channel_id: int):
     msg_id = db.getMessageId(channel_id)
-    logging.debug(
-        f'Channel ID: {channel_id}, Message ID: {msg_id[0].message_id}')
     channel = client.get_channel(channel_id)
     stockpiles = db.getAllStockpiles(channel_id)
     formatted_stockpiles = format_stockpiles(stockpiles)
