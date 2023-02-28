@@ -27,14 +27,12 @@ class SunDB:
             database="postgres",
         )
 
-
         self.engine = create_async_engine(url_object)
         self.async_session = async_sessionmaker(self.engine)
 
     async def init_models(self):
         async with self.engine.begin() as conn:
-             await conn.run_sync(Base.metadata.create_all)
-        
+            await conn.run_sync(Base.metadata.create_all)
 
     async def addStockPile(self, channel_id: str, name: str, depot: str, code: int):
         async with self.async_session() as session:
@@ -66,7 +64,7 @@ class SunDB:
             if result.rowcount == 0:
                 return False
 
-            session.commit()
+            await session.commit()
 
         return True
 
