@@ -1,14 +1,13 @@
 import discord
 import json
-from discord import app_commands
-from typing import List
-from sunbot.database import SunDB
-from sunbot.war_api import getLabeledDepots
-from collections import defaultdict
-import yaml
-from yaml.representer import Representer
 import logging
 import os
+import yaml
+from collections import defaultdict
+from discord import app_commands
+from sunbot.war_api import getLabeledDepots
+from typing import List
+from yaml.representer import Representer
 
 
 class Depots:

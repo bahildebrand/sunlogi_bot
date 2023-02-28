@@ -1,7 +1,7 @@
-import requests
-import json
 import math
+import json
 import re
+import requests
 
 ROOT_URL = "https://war-service-live.foxholeservices.com/api"
 

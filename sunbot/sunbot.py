@@ -1,10 +1,8 @@
 import discord
+import logging
+import os
 from discord import app_commands
 from sunbot.database import SunDB
-import os
-import logging
-
-from sunbot.delivery import add_commands
 from sunbot.stockpiles import add_stockpile_commands
 
 
