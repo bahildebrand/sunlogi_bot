@@ -10,6 +10,7 @@ from yaml.representer import Representer
 import logging
 import os
 
+
 class Depots:
     def __init__(self):
         load_depot_file = os.environ.get("DEPOT_TEST_FILE")
@@ -84,7 +85,7 @@ async def update_listing_message(client: discord.Client, channel_id: str):
     formatted_stockpiles = format_stockpiles(stockpiles)
     if msg_id is None:
         msg = await channel.send(content=formatted_stockpiles)
-        await db.setMessageId(channel_id, msg.id)
+        await db.setMessageId(channel_id, str(msg.id))
     else:
         msg = await channel.fetch_message(msg_id[0].message_id)
         await msg.edit(content=formatted_stockpiles)
@@ -106,7 +107,7 @@ async def addstockpile(interaction: discord.Interaction, depot: str, name: str, 
         db = interaction.client.db
         await db.addStockPile(str(interaction.channel_id), name, depot, code)
 
-        await update_listing_message(interaction.client, interaction.channel_id)
+        await update_listing_message(interaction.client, str(interaction.channel_id))
         await interaction.response.send_message(content=f'Created depot: {name}', ephemeral=True)
     else:
         await interaction.response.send_message(content=f'Invalid depot: {depot}. Please select one from the list', ephemeral=True)
