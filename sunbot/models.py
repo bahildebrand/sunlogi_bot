@@ -14,6 +14,7 @@ class Stockpiles(Base):
     stockpile_name: Mapped[str] = mapped_column(primary_key=True)
     depot: Mapped[str]
     code: Mapped[int]
+    archived: Mapped[bool]
 
     def __repr__(self) -> str:
         return f"Stockpiles(stockpile_name={self.stockpile_name}, depot={self.depot}, code={self.code})"

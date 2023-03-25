@@ -62,12 +62,14 @@ async def depot_autocomplete(
 
 
 def format_stockpiles(stockpiles):
-    stockpile_dict = defaultdict(lambda: defaultdict(list))
+    stockpile_dict = defaultdict(
+        lambda: defaultdict(lambda: defaultdict(list)))
     depot_map = depots.depotMap()
     for stockpile in stockpiles:
         stockpile = stockpile[0]
         region = depot_map[stockpile.depot]
-        stockpile_dict[region][stockpile.depot].append(
+        archived = "Archived" if stockpile.archived else "Active"
+        stockpile_dict[archived][region][stockpile.depot].append(
             {stockpile.stockpile_name: stockpile.code})
 
     yaml.add_representer(defaultdict, Representer.represent_dict)
@@ -120,7 +122,10 @@ async def stockpile_autocomplete(
     stockpiles = await db.getAllStockpiles(interaction.channel_id)
 
     stockpiles_filtered = list(
-        map(lambda stockpile: stockpile[0].stockpile_name, stockpiles))
+        filter(lambda stockpile: not stockpile[0].archived, stockpiles))
+
+    stockpiles_filtered = list(
+        map(lambda stockpile: stockpile[0].stockpile_name, stockpiles_filtered))
 
     stockpiles_filtered = list(
         filter(lambda stockpile: current.lower()
@@ -132,20 +137,20 @@ async def stockpile_autocomplete(
     ]
 
 
-@app_commands.command(description='Delete a stockpile')
-@app_commands.autocomplete(name=stockpile_autocomplete)
-async def deletestockpile(interaction: discord.Interaction, name: str):
+@ app_commands.command(description='Archive a stockpile')
+@ app_commands.autocomplete(name=stockpile_autocomplete)
+async def archivestockpile(interaction: discord.Interaction, name: str):
     db = interaction.client.db
-    stockpile_deleted = await db.deleteStockpile(name, interaction.channel_id)
+    stockpile_archived = await db.archiveStockpile(name, interaction.channel_id)
 
-    if stockpile_deleted:
-        await interaction.response.send_message(content=f'Deleted stockpile: {name}', ephemeral=True)
+    if stockpile_archived:
+        await interaction.response.send_message(content=f'Archived stockpile: {name}', ephemeral=True)
         await update_listing_message(interaction.client, interaction.channel_id)
     else:
         await interaction.response.send_message(content=f'Stockpile \"{name}\" not found. Please use a stockpile from the suggested list', ephemeral=True)
 
 
-@app_commands.command(description='Delete all stockpiles associated with this channel.')
+@ app_commands.command(description='Delete all stockpiles associated with this channel.')
 async def clearstockpiles(interaction: discord.Interaction):
     db = interaction.client.db
     await db.clearStockpiles()
@@ -156,5 +161,5 @@ async def clearstockpiles(interaction: discord.Interaction):
 
 def add_stockpile_commands(client):
     client.tree.add_command(addstockpile)
-    client.tree.add_command(deletestockpile)
+    client.tree.add_command(archivestockpile)
     client.tree.add_command(clearstockpiles)

@@ -5,6 +5,7 @@ from sunbot.models import MsgIds
 from sunbot.models import Stockpiles
 from sqlalchemy import delete
 from sqlalchemy import select
+from sqlalchemy import update
 from sqlalchemy import URL
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -38,6 +39,7 @@ class SunDB:
                 stockpile_name=name,
                 depot=depot,
                 code=code,
+                archived=False
             )
 
             session.add(new_stockpile)
@@ -51,6 +53,19 @@ class SunDB:
             result = await session.execute(statement)
 
             return result.fetchone()
+
+    async def archiveStockpile(self, name: str, channel_id: str) -> bool:
+        async with self.async_session() as session:
+            stmt = update(Stockpiles).where(Stockpiles.stockpile_name == name).where(
+                Stockpiles.channel_id == str(channel_id)).values(archived=True)
+
+            result = await session.execute(stmt)
+            if result.rowcount == 0:
+                return False
+
+            await session.commit()
+
+        return True
 
     async def deleteStockpile(self, name: str, channel_id: str) -> bool:
         async with self.async_session() as session:
