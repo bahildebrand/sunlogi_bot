@@ -67,6 +67,19 @@ class SunDB:
 
         return True
 
+    async def restoreArchivedStockpile(self, name: str, channel_id: str) -> bool:
+        async with self.async_session() as session:
+            stmt = update(Stockpiles).where(Stockpiles.stockpile_name == name).where(
+                Stockpiles.channel_id == str(channel_id)).values(archived=False)
+
+            result = await session.execute(stmt)
+            if result.rowcount == 0:
+                return False
+
+            await session.commit()
+
+        return True
+
     async def deleteStockpile(self, name: str, channel_id: str) -> bool:
         async with self.async_session() as session:
             stmt = delete(Stockpiles).where(Stockpiles.stockpile_name == name).where(
